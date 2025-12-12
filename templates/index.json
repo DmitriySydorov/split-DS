@@ -15,21 +15,29 @@
         "product_gdPAPB": {
           "type": "product",
           "settings": {
-            "product": "",
+            "product": "jordan-spizike-low",
             "second_image": false
           }
         },
         "product_eydMhg": {
           "type": "product",
           "settings": {
-            "product": "",
+            "product": "air-jordan-2-retro-low-two",
+            "second_image": false
+          }
+        },
+        "product_E6YVg7": {
+          "type": "product",
+          "settings": {
+            "product": "air-jordan-1-high-og",
             "second_image": false
           }
         }
       },
       "block_order": [
         "product_gdPAPB",
-        "product_eydMhg"
+        "product_eydMhg",
+        "product_E6YVg7"
       ],
       "name": "t:sections.collage.presets.name",
       "settings": {
