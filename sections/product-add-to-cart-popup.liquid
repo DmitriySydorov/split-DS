@@ -1,0 +1,359 @@
+{% liquid
+  assign extra_variants = null
+
+  assign selected_variant = product.selected_or_first_available_variant
+
+  if selected_variant.metafields.custom.extra_products.value != blank
+    assign extra_variants = selected_variant.metafields.custom.extra_products.value
+  elsif product.metafields.custom.extra_products.value != blank
+    assign extra_variants = product.metafields.custom.extra_products.value
+  elsif section.settings.extra_products != blank
+    assign extra_variants = section.settings.extra_products
+  endif
+%}
+
+{% if template.name == 'product' and section.settings.enabled and extra_variants != blank %}
+  {{ 'product-add-to-cart-popup.css' | asset_url | stylesheet_tag }}
+
+  <product-add-to-cart-popup
+    data-popup-id="AddToCartPopup"
+    data-enabled="{{ section.settings.enabled }}"
+    data-show-once="{{ section.settings.show_once }}"
+    data-storage-key="atc-popup-shown"
+  >
+    <script type="application/json" data-extra-variants>
+      {
+        "variants": {
+          {% for variant in product.variants %}
+            "{{ variant.id }}": {
+              {% if variant.metafields.custom.extra_products.value != blank %}
+                "items": [
+                  {% for item in variant.metafields.custom.extra_products.value %}
+                    {
+                      "id": {{ item.id }},
+                      "quantity": 1,
+                      "parent_id": {{ variant.id }}
+                    }{% unless forloop.last %},{% endunless %}
+                  {% endfor %}
+                ]
+              {% else %}
+                "items": null
+              {% endif %}
+            }{% unless forloop.last %},{% endunless %}
+          {% endfor %}
+        },
+        "product": {
+          {% if product.metafields.custom.extra_products.value != blank %}
+            "items": [
+              {% for item in product.metafields.custom.extra_products.value %}
+                {
+                  "id": {{ item.id }},
+                  "quantity": 1
+                }{% unless forloop.last %},{% endunless %}
+              {% endfor %}
+            ]
+          {% else %}
+            "items": null
+          {% endif %}
+        },
+        "section": {
+          {% if section.settings.extra_products != blank %}
+            "items": [
+              {% for item in section.settings.extra_products %}
+                {
+                  "id": {{ item.id }},
+                  "quantity": 1
+                }{% unless forloop.last %},{% endunless %}
+              {% endfor %}
+            ]
+          {% else %}
+            "items": null
+          {% endif %}
+        }
+      }
+    </script>
+    <div
+      id="AddToCartPopup"
+      class="atc-popup"
+      hidden
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="atc-popup__overlay"></div>
+
+      <div class="atc-popup__content">
+        <button class="atc-popup__close" type="button">×</button>
+
+        <div class="atc-popup__content-wrapper">
+          <div class="atc-popup__content-image">
+            {% if section.settings.image != blank %}
+              {{
+                section.settings.image
+                | image_url: width: 411
+                | image_tag: loading: 'lazy', widths: '50, 100, 150, 200, 300, 400, 550'
+              }}
+            {% else %}
+              {{
+                product.featured_image
+                | image_url: width: 411
+                | image_tag: loading: 'lazy', widths: '50, 100, 150, 200, 300, 400, 550'
+              }}
+            {% endif %}
+          </div>
+          <div class="atc-popup__content-right-side">
+            <h2>{{ section.settings.title }}</h2>
+            <div class="text-grey text text-style">
+              {{ section.settings.text }}
+            </div>
+            <div class="text-black subtext text-style">
+              {{ section.settings.text2 }}
+            </div>
+            <div class="extra-products-wrapper"></div>
+            {% assign product_form_id = 'quick-add-' | append: section.id | append: product.id %}
+            <div class="popup-btn-wrapper">
+              <product-form
+                class="product-form product-form--popup"
+                data-section-id="{{ section.id }}"
+                data-extra-items='[
+                  {%- for item in extra_variants -%}
+                    {
+                      "id": {{ item.selected_or_first_available_variant.id | default: item.id }},
+                      "quantity": 1,
+                      "parent_id": {{ selected_variant.id }}
+                    }{% unless forloop.last %},{% endunless %}
+                  {%- endfor -%}
+                ]'
+              >
+                {%- form 'product',
+                  product,
+                  id: product_form_id,
+                  class: 'form',
+                  novalidate: 'novalidate',
+                  data-type: 'add-to-cart-form'
+                -%}
+                  <input
+                    type="hidden"
+                    name="id"
+                    value="{{ product.selected_or_first_available_variant.id }}"
+                    class="product-variant-id"
+                    {% if card_product.selected_or_first_available_variant.available == false %}
+                      disabled
+                    {% endif %}
+                  >
+                  <button
+                    id="{{ product_form_id }}-submit"
+                    type="submit"
+                    name="add"
+                    class="quick-add__submit button button--full-width button--primary"
+                    aria-haspopup="dialog"
+                    aria-labelledby="{{ product_form_id }}-submit title-{{ section.id }}-{{ product.id }}"
+                    aria-live="polite"
+                    data-sold-out-message="true"
+                    {% if product.selected_or_first_available_variant.available == false %}
+                      disabled
+                    {% endif %}
+                  >
+                    <span>
+                      {%- if product.selected_or_first_available_variant.available -%}
+                        {{ 'products.product.add_to_cart' | t }}
+                      {%- else -%}
+                        {{ 'products.product.sold_out' | t }}
+                      {%- endif -%}
+                    </span>
+                    <span class="sold-out-message hidden">
+                      {{ 'products.product.sold_out' | t }}
+                    </span>
+                    {%- render 'loading-spinner' -%}
+                  </button>
+                {%- endform -%}
+              </product-form>
+              <product-form
+                class="product-form"
+                data-section-id="{{ section.id }}"
+              >
+                {%- form 'product',
+                  product,
+                  id: product_form_id,
+                  class: 'form',
+                  novalidate: 'novalidate',
+                  data-type: 'add-to-cart-form'
+                -%}
+                  <input
+                    type="hidden"
+                    name="id"
+                    value="{{ product.selected_or_first_available_variant.id }}"
+                    class="product-variant-id"
+                    {% if card_product.selected_or_first_available_variant.available == false %}
+                      disabled
+                    {% endif %}
+                  >
+                  <button
+                    id="{{ product_form_id }}-submit"
+                    type="submit"
+                    name="add"
+                    class="quick-add__submit button button--full-width button--secondary"
+                    aria-haspopup="dialog"
+                    aria-labelledby="{{ product_form_id }}-submit title-{{ section.id }}-{{ product.id }}"
+                    aria-live="polite"
+                    data-sold-out-message="true"
+                    {% if product.selected_or_first_available_variant.available == false %}
+                      disabled
+                    {% endif %}
+                  >
+                    <span>
+                      {%- if product.selected_or_first_available_variant.available -%}
+                        Continue to the Cart
+                      {%- else -%}
+                        {{ 'products.product.sold_out' | t }}
+                      {%- endif -%}
+                    </span>
+                    <span class="sold-out-message hidden">
+                      {{ 'products.product.sold_out' | t }}
+                    </span>
+                    {%- render 'loading-spinner' -%}
+                  </button>
+                {%- endform -%}
+              </product-form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="application/json" data-extra-products-data>
+      {
+        "variants": {
+          {% for variant in product.variants %}
+            "{{ variant.id }}": {
+              {% if variant.metafields.custom.extra_products.value != blank %}
+                "items": [
+                  {% for item in variant.metafields.custom.extra_products.value %}
+                    {% assign product_obj = collections.all.products | where: "id", item.product_id | first %}
+                    {% if product_obj %}
+                      {% assign item_name = product_obj.title | append: " - " | append: item.title | json %}
+                      {% assign item_subtext = product_obj.metafields.custom.subtext | json %}
+                    {% else %}
+                      {% assign item_name = item.title | json %}
+                    {% endif %}
+                    {
+                      "id": {{ item.selected_or_first_available_variant.id | default: item.id }},
+                      "title": {{ item_name | json}},
+                      "url": {% if item.handle %}{{ item | product_url | json }}{% else %}null{% endif %},
+                      "image": {% if item.featured_image %}{{ item.featured_image | image_url: width: 300 | json }}{% else %}null{% endif %},
+                      "sku": {% if item.sku %}{{ item.sku | json }}{% else %}null{% endif %},
+                      "price": {% if item.price %}{{ item.price | money | json }}{% else %}null{% endif %},
+                      "compare_at_price": {% if item.compare_at_price %}{{ item.compare_at_price | money | json }}{% else %}null{% endif %},
+                      "description": {% if item.featured_image %}{{ item.featured_image.alt | json }}{% else %}null{% endif %}
+                    }{% unless forloop.last %},{% endunless %}
+                  {% endfor %}
+                ]
+              {% else %}
+                "items": null
+              {% endif %}
+            }{% unless forloop.last %},{% endunless %}
+          {% endfor %}
+        },
+        "product": {
+          {% if product.metafields.custom.extra_products.value != blank %}
+            "items": [
+              {% for item in product.metafields.custom.extra_products.value %}
+               {% assign product_obj = collections.all.products | where: "id", item.product_id | first %}
+                    {% if product_obj %}
+                      {% assign item_name = product_obj.title | append: " - " | append: item.title | json %}
+                      {% assign item_subtext = product_obj.metafields.custom.subtext | json %}
+                    {% else %}
+                      {% assign item_name = item.title | json %}
+                    {% endif %}
+                {
+                  "id": {{ item.selected_or_first_available_variant.id | default: item.id }},
+                  "title": {{ item_name | json }},
+                  "url": {% if item.handle %}{{ item | product_url | json }}{% else %}null{% endif %},
+                  "image": {% if item.featured_image %}{{ item.featured_image | image_url: width: 300 | json }}{% else %}null{% endif %},
+                  "price": {% if item.price %}{{ item.price | money | json }}{% else %}null{% endif %},
+                  "sku": {% if item.sku %}{{ item.sku | json }}{% else %}null{% endif %},
+                  "compare_at_price": {% if item.compare_at_price %}{{ item.compare_at_price | money | json }}{% else %}null{% endif %},
+                  "description": {% if item.featured_image %}{{ item.featured_image.alt | json }}{% else %}null{% endif %}
+                }{% unless forloop.last %},{% endunless %}
+              {% endfor %}
+            ]
+          {% else %}
+            "items": null
+          {% endif %}
+        },
+        "section": {
+          {% if section.settings.extra_products != blank %}
+            "items": [
+              {% for item in section.settings.extra_products %}
+                {
+                  "id": {{ item.selected_or_first_available_variant.id | default: item.id }},
+                  "title": {{ item.title | json }},
+                  "url": {% if item.handle %}{{ item | product_url | json }}{% else %}null{% endif %},
+                  "image": {% if item.featured_image %}{{ item.featured_image | image_url: width: 300 | json }}{% else %}null{% endif %},
+                  "sku": {% if item.sku %}{{ item.sku | json }}{% else %}null{% endif %},
+                  "price": {% if item.price %}{{ item.price | money | json }}{% else %}null{% endif %},
+                  "compare_at_price": {% if item.compare_at_price %}{{ item.compare_at_price | money | json }}{% else %}null{% endif %},
+                  "description": {{ item.description | strip_html | truncate: 120 | json }}
+                }{% unless forloop.last %},{% endunless %}
+              {% endfor %}
+            ]
+          {% else %}
+            "items": null
+          {% endif %}
+        }
+      }
+    </script>
+  </product-add-to-cart-popup>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Featured products",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "enabled",
+      "label": "Enable popup",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_once",
+      "label": "Show only once per customer",
+      "default": false
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Image"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Popup title",
+      "default": "Before adding to cart"
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Popup text",
+      "default": "<p>Some important info here</p>"
+    },
+    {
+      "type": "richtext",
+      "id": "text2",
+      "label": "Popup subtext"
+    },
+    {
+      "type": "product_list",
+      "id": "extra_products",
+      "label": "Extra products (fallback)",
+      "limit": 4
+    }
+  ],
+  "presets": [
+    {
+      "name": "Featured products"
+    }
+  ]
+}
+{% endschema %}

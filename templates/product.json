@@ -84,6 +84,7 @@
     },
     "related-products": {
       "type": "related-products",
+      "disabled": true,
       "settings": {
         "heading": "You may also like",
         "heading_size": "h2",
@@ -99,10 +100,26 @@
         "padding_top": 36,
         "padding_bottom": 28
       }
+    },
+    "product_add_to_cart_popup_yEtXU3": {
+      "type": "product-add-to-cart-popup",
+      "name": "Featured products",
+      "settings": {
+        "enabled": true,
+        "show_once": false,
+        "title": "COMPLETE YOUR PURCHASE",
+        "text": "<p>You are trying to add <strong>{{ product.title }}</strong> to the cart.</p>",
+        "text2": "<p>Complete your look and save <strong>$13!</strong></p>",
+        "extra_products": [
+          "nike-icon-air-force-2",
+          "nike-everyday-black"
+        ]
+      }
     }
   },
   "order": [
     "main",
-    "related-products"
+    "related-products",
+    "product_add_to_cart_popup_yEtXU3"
   ]
 }
