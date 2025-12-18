@@ -106,7 +106,7 @@
       "name": "Featured products",
       "settings": {
         "enabled": true,
-        "show_once": true,
+        "show_once": false,
         "title": "COMPLETE YOUR PURCHASE",
         "text": "<p>You are trying to add <strong>{{ product.title }}</strong> to the cart.</p>",
         "text2": "<p>Complete your look and save <strong>$13!</strong></p>",
