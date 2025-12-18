@@ -107,7 +107,6 @@
       "settings": {
         "enabled": true,
         "show_once": false,
-        "image": "shopify://shop_images/Logo-on-dark-Copy-1.svg",
         "title": "COMPLETE YOUR PURCHASE",
         "text": "<p>You are trying to add <strong>{{ product.title }}</strong> to the cart.</p>",
         "text2": "<p>Complete your look and save <strong>$13!</strong></p>",
